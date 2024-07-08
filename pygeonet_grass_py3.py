@@ -12,7 +12,7 @@ def grass(filteredDemArray):
     # Software
     if sys.platform.startswith('win'):
         # MS Windows
-        grass7bin = r'C:\OSGeo4W64\bin\grass78.bat'
+        grass7bin = r'C:\OSGeo4W\bin\grass83.bat'
         # uncomment when using standalone WinGRASS installer
         # grass7bin = r'C:\Program Files (x86)\GRASS GIS 7.2.0\grass72.bat'
         # this can be avoided if GRASS executable is added to PATH
@@ -96,11 +96,39 @@ def grass(filteredDemArray):
 
     mapset = 'PERMANENT'
     os.environ['MAPSET'] = mapset
+    def setup_grass_environment():
+        if sys.platform.startswith('win'):
+            grass_bin = r'C:\OSGeo4W\bin\grass83.bat'
+        else:
+            raise OSError('This script currently only supports Windows platforms.')
 
+        start_cmd = [grass_bin, '--config', 'path']
+        process = subprocess.Popen(start_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        
+        if process.returncode != 0:
+            print(f"ERROR: {err.decode()}", file=sys.stderr)
+            sys.exit(-1)
+        
+        gis_base = out.decode().strip()
+        os.environ['GISBASE'] = gis_base
+        os.environ['PATH'] += os.pathsep + os.path.join(gis_base, 'bin')
+
+    setup_grass_environment()
     # import GRASS Python bindings
     import grass.script as g
     import grass.script.setup as gsetup
 
+    home = os.path.expanduser("~")
+    gisdb = os.path.join(home, "Documents", "grassdata")
+    location = 'geonet'
+    mapset = 'PERMANENT'
+
+    grassGISlocation = os.path.join(gisdb, location)
+    if not os.path.exists(os.path.join(grassGISlocation, mapset)):
+        os.makedirs(os.path.join(grassGISlocation, mapset))
+        g.run_command('g.proj', georef=Parameters.pmGrassGISfileName, location=location)
+    
     # Launch session
     gsetup.init(gisbase, gisdb, location, mapset)
 

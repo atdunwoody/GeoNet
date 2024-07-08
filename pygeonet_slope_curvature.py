@@ -80,7 +80,7 @@ def compute_quantile_quantile_curve(x):
     print(res1)
     return res
 
-
+ 
 def main():
     # plt.switch_backend('agg')
     filteredDemArray = read_geotif_filteredDEM()
