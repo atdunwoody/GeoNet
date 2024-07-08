@@ -131,5 +131,4 @@ dependencies:
   - zstd=1.4.5=h1f3a1b7_2
   - pip:
     - scikit-fmm==2019.1.30
-prefix: C:\Users\alecc\Anaconda3\envs\GeoNetEnv
 
