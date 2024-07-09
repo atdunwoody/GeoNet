@@ -23,8 +23,10 @@ def set_environment_variables(gisbase, gisdb, geofloodhomedir):
     # Update to include grass83/bin in the PATH environment variable correctly.
     # os.environ['PATH'] += os.pathsep + r"C:\OSGeo4W\apps\grass\grass83\bin"
 
-    if not os.path.exists(gisdb):
-        os.makedirs(gisdb)
+    print('GISBASE: ',os.environ['GISBASE'])
+    print('GISDBASE: ',os.environ['GISDBASE'])
+    
+
 
 def delete_location(location_path):
     if os.path.exists(location_path):
@@ -131,6 +133,16 @@ def main():
                         'drainage=dra1v23', 'accumulation=acc1v23'], 
                         check=True)
     
+    # Manage extensions
+    extensions = ['r.stream.basins', 'r.stream.watersheds']
+    for extension in extensions:
+        try:
+            # Check if the extension is installed and install if missing
+            subprocess.run([grass_executable, '--exec', 'g.extension', 'extension=' + extension], check=True)
+        except subprocess.CalledProcessError:
+            # Handle cases where the extension installation fails
+            logging.error(f"Failed to install extension {extension}")
+            
     # Hydrological analysis
     logging.info("Identify outlets by negative flow direction")
     subprocess.run([grass_executable, '--exec', 
@@ -170,7 +182,7 @@ def main():
 
     outputBAS_filename = geotiffmapraster + '_basins.tif'
     subprocess.run([grass_executable, '--exec', 'r.out.gdal', '--overwrite',
-                    f'input=outletbasins', 'type=Int16',
+                    f'input=outletbasins', 'type=Int32',
                     f'output={os.path.join(Parameters.geonetResultsDir, outputBAS_filename)}',
                     'format=GTiff'], check=True)
     

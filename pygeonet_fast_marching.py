@@ -4,34 +4,46 @@ from time import perf_counter
 from pygeonet_rasterio import *
 from pygeonet_plot import *
 import time
-from numba import njit
-from numba import prange
+from numba import njit, prange, set_num_threads
 import psutil
 import dask
 from dask.distributed import Client
 
 def Fast_March_Setup(outlet_array, basinIndexArray):
-
-    # Computing the percentage drainage areas
-    print("Computing percentage drainage area of each indexed basin")
+    print("Setting up Fast Marching Method")
     fastMarchingStartPointList = np.array(outlet_array)
-    fmmX = []
-    fmmY = []
-    basinsUsedIndexList = np.zeros((len(fastMarchingStartPointList[0]),1))
+    
+    print(f"Length of fastMarchingStartPointList: {len(fastMarchingStartPointList)}"
+          )
+    basinsUsedIndexList = np.zeros((len(fastMarchingStartPointList[0]), 1))
+    
+    print(f"Length of basinsUsedIndexList: {len(basinsUsedIndexList)}")
     if not hasattr(Parameters, 'xDemSize'):
-        Parameters.xDemSize = np.size(basinIndexArray,1)
+        print("Setting xDemSize based on basinIndexArray dimensions.")
+        Parameters.xDemSize = np.size(basinIndexArray, 1)
     if not hasattr(Parameters, 'yDemSize'):
-        Parameters.yDemSize = np.size(basinIndexArray,0)
-    nx = Parameters.xDemSize
-    ny = Parameters.yDemSize
-    nDempixels = float(nx*ny)
-    basin_elements=Parameters.numBasinsElements
-    threshold=defaults.thresholdPercentAreaForDelineation
-    #n_test=basinIndexArray[fastMarchingStartPointList[0,:],
-    #				fastMarchingStartPointList[1,:]]
-    iter_total = np.arange(0,len(fastMarchingStartPointList[0])).size
-    return fastMarchingStartPointList, nDempixels,basin_elements, threshold, iter_total
+        print("Setting yDemSize based on basinIndexArray dimensions.")
+        Parameters.yDemSize = np.size(basinIndexArray, 0)
+    
+    nx, ny = Parameters.xDemSize, Parameters.yDemSize
+    print(f"DEM dimensions set to {nx}x{ny} pixels.")
+    
+    nDempixels = float(nx * ny)
+    print(f"Total number of DEM pixels: {nDempixels}")
 
+    basin_elements = Parameters.numBasinsElements
+    print(f"Number of basin elements: {basin_elements}")
+
+    threshold = defaults.thresholdPercentAreaForDelineation
+    print(f"Area threshold for delineation: {threshold}%")
+
+    iter_total = len(fastMarchingStartPointList[0])
+    print(f"Total number of iterations determined by outlet points: {iter_total}")
+
+    print("Fast March Setup complete")
+    return fastMarchingStartPointList, nDempixels, basin_elements, threshold, iter_total
+
+set_num_threads(16)  # Adjust based on your CPU
 @njit(parallel=True)
 def Fast_Marching_Start_Point_Identification(outlet_array, basinIndexArray,fastMarchingStartPointList, nDempixels,basin_elements, threshold, iter_total):
     fmmX = []
@@ -44,7 +56,7 @@ def Fast_Marching_Start_Point_Identification(outlet_array, basinIndexArray,fastM
         if (percentBasinArea > threshold) and (numelments > basin_elements):            
             fmmX.append(fastMarchingStartPointList[1,label])
             fmmY.append(fastMarchingStartPointList[0,label])
-        
+
     return fmmX, fmmY
 
 def fmm_list_creation(fmmY,fmmX):
@@ -117,12 +129,12 @@ def Fast_Marching(fastMarchingStartPointListFMM, basinIndexArray, flowArray, rec
         maskedBasinFAC = np.zeros((basinIndexArray.shape))
         maskedBasinFAC[basinIndexArray==basinIndexList]=\
         flowArray[basinIndexArray==basinIndexList]
-##        maskedBasinFAC[maskedBasinFAC==0]=np.nan
-##        # Get the outlet of subbasin
-##        maskedBasinFAC[np.isnan(maskedBasinFAC)]=0
+        # maskedBasinFAC[maskedBasinFAC==0]=np.nan
+        # # Get the outlet of subbasin
+        # maskedBasinFAC[np.isnan(maskedBasinFAC)]=0
         # outlets locations in projection of the input dataset
-##        outletsxx = fastMarchingStartPointList[1,i]
-##        outletsyy = fastMarchingStartPointList[0,i]
+        # outletsxx = fastMarchingStartPointList[1,i]
+        # outletsyy = fastMarchingStartPointList[0,i]
         # call the fast marching here
         #phi = np.nan * np.ones((reciprocalLocalCostArray.shape)) # old
         phi = np.zeros(reciprocalLocalCostArray.shape)
@@ -171,26 +183,33 @@ def main():
     outfilepath = Parameters.geonetResultsDir
     demName = Parameters.demFileName.split('.')[0]
     outlet_filename = demName+'_outlets.tif'
+    print("Reading the outlet array")
     outlet_array = read_geotif_generic(outfilepath, outlet_filename)[0]
     outlet_array = np.transpose(np.argwhere(~np.isnan(outlet_array)))
     basin_filename = demName+'_basins.tif'
+    print("Reading the basin array")
     basinIndexArray = read_geotif_generic(outfilepath, basin_filename)[0]
     curvature_filename = demName+'_curvature.tif'
+    print("Reading the curvature array")
     curvatureDemArray = read_geotif_generic(outfilepath, curvature_filename)[0]
     fac_filename = demName + '_fac.tif'
+    print("Reading the flow accumulation array")
     flowArray = read_geotif_generic(outfilepath, fac_filename)[0]
     filteredDemArray = read_geotif_filteredDEM()
     flowArray[np.isnan(filteredDemArray)]=np.nan
     flowMean = np.mean(flowArray[~np.isnan(flowArray[:])])
     skeleton_filename = demName+'_skeleton.tif'
+    print("Reading the skeleton array")
     skeletonFromFlowAndCurvatureArray = read_geotif_generic(outfilepath, skeleton_filename)[0]
 
     # Initialize Parameters
-    fastMarchingStartPointList,nDempixels,basin_elements, threshold, iter_total = Fast_March_Setup(outlet_array,basinIndexArray)
+    fastMarchingStartPointList,nDempixels,basin_elements, threshold, iter_total = Fast_March_Setup(outlet_array, basinIndexArray)
 
     # Making outlets for FMM
     t1 = time.perf_counter()
-    fmmX,fmmY = Fast_Marching_Start_Point_Identification(outlet_array, basinIndexArray,fastMarchingStartPointList,nDempixels,basin_elements, threshold, iter_total)
+    print('Identifying Fast Marching Start Points')
+    fmmX,fmmY = Fast_Marching_Start_Point_Identification(outlet_array, basinIndexArray, fastMarchingStartPointList,
+                                                         nDempixels, basin_elements, threshold, iter_total)
     t2 = time.perf_counter()
     print(f'Calc Time: {t2-t1}')
     # Create Final FMM List

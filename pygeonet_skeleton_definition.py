@@ -43,7 +43,12 @@ def main():
     print('Curvature mean: ', curvatureDemMean)
     print('Curvature standard deviation: ', curvatureDemStdDevn)
     print(f'DEM Projection: {prj_curv}')
+    
+
+
     flowArray,prj_fac,src_fac = read_geotif_generic(outfilepath, fac_filename)
+    print("Shape of filteredDemArray:", filteredDemArray.shape)
+    print("Shape of flowArray:", flowArray.shape)
     flowArray[np.isnan(filteredDemArray)] = np.nan
     flowMean = np.mean(flowArray[~np.isnan(flowArray[:])])
     
