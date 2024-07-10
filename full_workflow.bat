@@ -11,6 +11,7 @@ python pygeonet_slope_curvature.py
 
 python pygeonet_grass_py3.py
 
+python pygeonet_clip_raster.py
 
 REM Execute remaining Python scripts
 python pygeonet_skeleton_definition.py

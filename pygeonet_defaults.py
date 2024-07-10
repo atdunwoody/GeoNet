@@ -67,7 +67,7 @@ demSmoothingQuantile = 0.9
 #curvatureCalcMethod = 'laplacian'
 curvatureCalcMethod = 'geometric'
 thresholdQqCurvature = 0
-flowThresholdForSkeleton = 3000
+flowThresholdForSkeleton = 2000
 channelheadPredefined = 0
 
 # Channel head search box size applied on skeleton image

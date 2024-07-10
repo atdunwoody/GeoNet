@@ -43,7 +43,7 @@ def Fast_March_Setup(outlet_array, basinIndexArray):
     print("Fast March Setup complete")
     return fastMarchingStartPointList, nDempixels, basin_elements, threshold, iter_total
 
-set_num_threads(16)  # Adjust based on your CPU
+set_num_threads(12)  # Adjust based on your CPU
 @njit(parallel=True)
 def Fast_Marching_Start_Point_Identification(outlet_array, basinIndexArray,fastMarchingStartPointList, nDempixels,basin_elements, threshold, iter_total):
     fmmX = []
@@ -120,6 +120,7 @@ def Fast_Marching(fastMarchingStartPointListFMM, basinIndexArray, flowArray, rec
     # Do fast marching for each sub basin
     geodesicDistanceArray = np.zeros((basinIndexArray.shape))
     geodesicDistanceArray[geodesicDistanceArray==0]=np.Inf
+    print('Number of subbasins: ',len(fastMarchingStartPointListFMM[0]))
     for i in range(0,len(fastMarchingStartPointListFMM[0])):
         basinIndexList = basinIndexArray[fastMarchingStartPointListFMM[0,i],
                                          fastMarchingStartPointListFMM[1,i]]
@@ -181,7 +182,7 @@ def Fast_Marching(fastMarchingStartPointListFMM, basinIndexArray, flowArray, rec
 
 def main():
     outfilepath = Parameters.geonetResultsDir
-    demName = Parameters.demFileName.split('.')[0]
+    demName = "PM_filtered_grassgis"
     outlet_filename = demName+'_outlets.tif'
     print("Reading the outlet array")
     outlet_array = read_geotif_generic(outfilepath, outlet_filename)[0]
@@ -214,6 +215,7 @@ def main():
     print(f'Calc Time: {t2-t1}')
     # Create Final FMM List
     fastMarchingStartPointListFMM = fmm_list_creation(fmmY,fmmX)
+    print('Fast Marching Start Points: ')
     print(fastMarchingStartPointListFMM)
     # Computing the local cost function
     print('Preparing to calculate cost function')
@@ -243,3 +245,4 @@ if __name__ == '__main__':
 
 
 
+  
