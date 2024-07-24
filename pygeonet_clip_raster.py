@@ -38,14 +38,36 @@ def clip_all_rasters(input_folder, clipping_raster):
     # Get the polygon from the bounds of the clipping raster
     clipping_polygon = get_raster_extent(clipping_raster)
     
-    # Process each raster in the input folder
+    # # Process each raster in the input folder
+    # for raster_file in glob.glob(os.path.join(input_folder, '*.tif')):
+    #     print(f"Clipping raster: {raster_file}")
+    #     clip_raster(raster_file, clipping_polygon)
+        
+    #clip by the smallest raster
+    smallest_raster = find_smallest_raster(input_folder)
+    clipping_polygon = get_raster_extent(smallest_raster)
     for raster_file in glob.glob(os.path.join(input_folder, '*.tif')):
         print(f"Clipping raster: {raster_file}")
         clip_raster(raster_file, clipping_polygon)
+
+def find_smallest_raster(input_folder):
+    """Find the smallest raster in the input folder."""
+    smallest_raster = None
+    smallest_size = float('inf')
+    
+    for raster_file in glob.glob(os.path.join(input_folder, '*.tif')):
+        with rasterio.open(raster_file) as src:
+            size = src.width * src.height
+            if size < smallest_size:
+                smallest_raster = raster_file
+                smallest_size = size
+    
+    return smallest_raster
 
 # Specify the paths to your data
 input_folder = os.path.dirname(Parameters.pmGrassGISfileName)
 clipping_raster = Parameters.pmGrassGISfileName
 
+#clipping_raster = r"C:\Users\alextd\Documents\GitHub\GeoNet\GeoOutputs\GIS\2021_LIDAR_Full\2021_DEM_OT_ndv_fdr.tif"
 # Run the function to clip and overwrite all rasters with NoData value set
 clip_all_rasters(input_folder, clipping_raster)

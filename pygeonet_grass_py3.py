@@ -118,16 +118,20 @@ def main():
         Parameters.xDemSize=np.size(filteredDemArray,1)
     if Parameters.xDemSize > 4000 or Parameters.yDemSize > 4000:
         logging.info('Using swap memory option for large size DEM')
-        subprocess.run([grass_executable, '--exec', 'r.watershed', '-am', '--overwrite', 
+        subprocess.run([grass_executable, '--exec', 
+                        'r.watershed', '-am', '--overwrite', 
                         f'elevation={geotiffmapraster}', 
                         f'threshold={subbasinThreshold}', 
                         f'drainage=dra1v23'], check=True)
-        subprocess.run([grass_executable, '--exec', 'r.watershed', '-am', '--overwrite',
+        
+        subprocess.run([grass_executable, '--exec', 
+                        'r.watershed', '-am', '--overwrite',
                         f'elevation={geotiffmapraster}',
                         f'threshold={subbasinThreshold}',
                         'accumulation=acc1v23'], check=True)
     else:
-        subprocess.run([grass_executable, '--exec', 'r.watershed', '-a', '--overwrite',
+        subprocess.run([grass_executable, '--exec', 
+                        'r.watershed', '-a', '--overwrite',
                         f'elevation={geotiffmapraster}',
                         f'threshold={subbasinThreshold}',
                         'drainage=dra1v23', 'accumulation=acc1v23'], 
@@ -147,46 +151,57 @@ def main():
     logging.info("Identify outlets by negative flow direction")
     subprocess.run([grass_executable, '--exec', 
                     'r.mapcalc', '--overwrite',
-                    f'expression=outletmap = if(dra1v23, 1, null())'], 
+                    f'expression = outletmap = if(dra1v23 >= 0, null(), 1)'], 
                     check=True)
+    
     logging.info("Converting outlet raster to vector")
     subprocess.run([grass_executable, '--exec', 
                     'r.to.vect', '--overwrite',
-                    f'input=outletmap', 'output=outletpoints', 'type=point'], 
+                    f'input=outletmap', 'output=outletsmapvec', 'type=point'], 
                     check=True)
     
     logging.info("Delineating basins according to outlets")
     subprocess.run([grass_executable, '--exec', 
                     'r.stream.basins', '--overwrite',
-                    'direction=dra1v23', 'points=outletpoints', 
+                    'direction=dra1v23', 'points=outletsmapvec', 
                     'basins=outletbasins'], check=True)
 
     logging.info("Exporting rasters and vectors")
     outlet_filename = geotiffmapraster + '_outlets.tif'
-    subprocess.run([grass_executable, '--exec', 'r.out.gdal', '--overwrite',
+    subprocess.run([grass_executable, '--exec', 
+                    'r.out.gdal', '--overwrite',
                     f'input=outletmap', 'type=Float32',
                     f'output={os.path.join(Parameters.geonetResultsDir, outlet_filename)}',
                     'format=GTiff'], check=True)
     
     outputFAC_filename = geotiffmapraster + '_fac.tif'
-    subprocess.run([grass_executable, '--exec', 'r.out.gdal', '--overwrite',
+    subprocess.run([grass_executable, '--exec', 
+                    'r.out.gdal', '--overwrite',
                     f'input=acc1v23', 'type=Float64',
                     f'output={os.path.join(Parameters.geonetResultsDir, outputFAC_filename)}',
                     'format=GTiff'], check=True)
 
     outputFDR_filename = geotiffmapraster + '_fdr.tif'
-    subprocess.run([grass_executable, '--exec', 'r.out.gdal', '--overwrite',
+    subprocess.run([grass_executable, '--exec', 
+                    'r.out.gdal', '--overwrite',
                     f'input=dra1v23', 'type=Int32',
                     f'output={os.path.join(Parameters.geonetResultsDir, outputFDR_filename)}',
                     'format=GTiff'], check=True)
 
     outputBAS_filename = geotiffmapraster + '_basins.tif'
-    subprocess.run([grass_executable, '--exec', 'r.out.gdal', '--overwrite',
+    subprocess.run([grass_executable, '--exec', 
+                    'r.out.gdal', '--overwrite',
                     f'input=outletbasins', 'type=Int32',
                     f'output={os.path.join(Parameters.geonetResultsDir, outputBAS_filename)}',
                     'format=GTiff'], check=True)
     
     logging.info("Hydrological analysis completed. Results saved.")
 
+    #Export outletsmapvec to shapefile
+    subprocess.run([grass_executable, '--exec', 
+                    'v.out.ogr', '--overwrite',
+                    'input=outletsmapvec', 
+                    f'output={os.path.join(Parameters.geonetResultsDir, geotiffmapraster + "_outlets.shp")}',
+                    'format=ESRI_Shapefile'], check=True)
 if __name__ == "__main__":
     main()

@@ -27,7 +27,7 @@ diffusionSigmaSquared = 0.05
 nFilterIterations =  50 # Nonlinear filtering iterations
 
 # Flow routing options and sub basin indexing
-thresholdAreaSubBasinIndexing = 1500
+thresholdAreaSubBasinIndexing = 1500 # default = 1500
 
 # Define the cost function
 # areaArray=D8 accumulation area
@@ -63,11 +63,11 @@ demErrorFlag = -9998.0
 # The demSmoothingQuantile is the quantile of landscape we want to smooth and
 # (1-demSmoothingQuantile) is the quantile of landscape we want to enhance.
 # A good range of demSmoothingQuantile is 0.5 to 0.9
-demSmoothingQuantile = 0.9
+demSmoothingQuantile = 0.9 # default = 0.9
 #curvatureCalcMethod = 'laplacian'
 curvatureCalcMethod = 'geometric'
 thresholdQqCurvature = 0
-flowThresholdForSkeleton = 2000
+flowThresholdForSkeleton = 3000 # default = 3000
 channelheadPredefined = 0
 
 # Channel head search box size applied on skeleton image

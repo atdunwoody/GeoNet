@@ -1,0 +1,24 @@
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_slope_curvature.py", line 2, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_grass_py3.py", line 8, in <module>
+    from osgeo import gdal, osr
+ModuleNotFoundError: No module named 'osgeo'
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_clip_raster.py", line 1, in <module>
+    from shapely.geometry import box
+ModuleNotFoundError: No module named 'shapely'
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_skeleton_definition.py", line 2, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_fast_marching.py", line 1, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "C:\Users\alextd\Documents\GitHub\GeoNet\pygeonet_channel_head_definition.py", line 1, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
